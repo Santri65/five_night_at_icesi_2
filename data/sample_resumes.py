@@ -4,6 +4,9 @@ Sample Resumes for the 4 Professional Profiles:
 2. Machine Learning Engineer (Mary Jane Watson - Reference Profile)
 3. Data Engineer (Carlos Ruiz - Team Profile)
 4. UI Developer (Gwen Stacy - Team Profile)
+
+The resumes intentionally use different names and abbreviations
+for qualifications to test the normalization stage.
 """
 
 SAMPLE_RESUMES = [
@@ -17,8 +20,8 @@ SAMPLE_RESUMES = [
         Education: Bachelor of Computer Science (2018 - 2022)
         3 years of experience developing web applications.
         Technical Skills:
-        JavaScript, TypeScript, React.js, Node.js, PostgreSQL,
-        REST APIs, Git.
+        JS, TypeScript, React.js, NodeJS, Postgres,
+        RESTful APIs, Git.
         """
     },
     {
@@ -29,10 +32,11 @@ SAMPLE_RESUMES = [
         Email: mj.watson@dailybugle.com | Phone: (123) 456-7890
         LinkedIn: linkedin.com/in/mary-jane-watson
         Education: M.S. in Artificial Intelligence
-        2 years of experience developing predictive models and data-processing pipelines.
+        2 years of experience developing predictive models
+        and data-processing pipelines.
         Technical Skills:
-        Python, Pandas, NumPy, Scikit-learn, TensorFlow,
-        PyTorch, Machine-learning model development, SQL, Git.
+        Python, pandas, sklearn, Tensor Flow,
+        Py Torch, ML model development, SQL, Git.
         """
     },
     {
@@ -45,8 +49,7 @@ SAMPLE_RESUMES = [
         Education: Ingenieria de Sistemas, Postgrado en Data Science
         4 years of experience building high-throughput ETL data pipelines.
         Technical Skills:
-        Python, SQL, Apache Spark, ETL Pipelines,
-        Data Warehousing, Git.
+        Python, SQL, Spark, ETL, Data Warehouse, Git.
         """
     },
     {
@@ -59,8 +62,7 @@ SAMPLE_RESUMES = [
         Education: B.S. in Computer Science, Certified UI/UX Designer
         5+ years of experience developing responsive web interfaces.
         Technical Skills:
-        HTML, CSS, JavaScript, React,
-        Responsive Web Design, Git.
+        HTML5, CSS3, JS, React.js, RWD, Git.
         """
     }
 ]
