@@ -100,10 +100,10 @@
 #### Pattern Description
 - Matches experience duration phrases (e.g., `3 years of experience`, `5+ years`).
 - Matches employment date ranges (e.g., `2018 - 2022`).
-- Matches formalized job titles requiring both seniority modifier and role noun (e.g., `Senior DevOps Engineer`, `Full Stack Developer`).
+- Matches formalized job titles requiring both seniority modifier and role noun (e.g., `Senior UI Developer`, `Full Stack Developer`).
 
 **Examples:**
-- `3 years of experience`, `2018 - 2022`, `Senior DevOps Engineer`
+- `3 years of experience`, `2018 - 2022`, `Senior UI Developer`
 
 ---
 
