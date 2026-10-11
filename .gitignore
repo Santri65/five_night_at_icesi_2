@@ -1,0 +1,13 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Runtime outputs (generated dynamically)
+output/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
