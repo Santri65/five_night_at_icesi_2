@@ -4,12 +4,10 @@ import os
 import sys
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-if DATA_DIR not in sys.path:
-    sys.path.append(DATA_DIR)
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
 
-from sample_resumes import SAMPLE_RESUMES
-
+from data.sample_resumes import SAMPLE_RESUMES
 
 PATTERNS = {
     "contact_emails": re.compile(
