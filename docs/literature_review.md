@@ -35,7 +35,7 @@ Using an FST guarantees that any recognized spelling variant translates into a u
 
 ---
 
-## 5. References
+## 4. References
 
 1. **Chomsky, N.** (1956). *Three models for the description of language*. IRE Transactions on Information Theory, 2(3), 113–124.
 2. **Hopcroft, J. E., Motwani, R., & Ullman, J. D.** (2006). *Introduction to Automata Theory, Languages, and Computation* (3rd ed.). Pearson / Addison-Wesley.
