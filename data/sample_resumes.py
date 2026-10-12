@@ -1,11 +1,3 @@
-"""
-Sample Resumes for the 4 Professional Profiles:
-1. Full Stack Developer (Wednesday Addams - Reference Profile)
-2. Machine Learning Engineer (Mary Jane Watson - Reference Profile)
-3. Data Engineer (Carlos Ruiz - Team Profile)
-4. UI Developer (Gwen Stacy - Team Profile)
-"""
-
 SAMPLE_RESUMES = [
     {
         "candidate_name": "Wednesday Addams",
@@ -50,17 +42,17 @@ SAMPLE_RESUMES = [
         """
     },
     {
-        "candidate_name": "Gwen Stacy",
-        "target_profile": "UI Developer",
+        "candidate_name": "Alex Morgan",
+        "target_profile": "DevOps Engineer",
         "raw_text": """
-        Gwen Stacy
-        Email: gwen.stacy@example.com | Phone: +1 555-0123
-        GitHub: https://github.com/gwenstacy
-        Education: B.S. in Computer Science, Certified UI/UX Designer
-        5+ years of experience developing responsive web interfaces.
+        Alex Morgan
+        Email: alex.morgan@example.com | Phone: +1 555-0142
+        GitHub: https://github.com/alex-morgan
+        Education: B.S. in Computer Science
+        5 years of experience automating cloud infrastructure and CI/CD deployments.
         Technical Skills:
-        HTML, CSS, JavaScript, React,
-        Responsive Web Design, Git.
+        Bash, Python, Go, Docker, Kubernetes, Terraform, Ansible,
+        Jenkins, CI/CD, AWS, Linux, Nginx, Git.
         """
     }
 ]

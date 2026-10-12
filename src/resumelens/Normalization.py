@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from pyformlang.fst import FiniteStateTransducer as FST
+from pyformlang.fst import FST
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if BASE_DIR not in sys.path:
@@ -19,7 +19,6 @@ VARIANTS = {
     "SQL": ["sql"],
     "C_PLUS_PLUS": ["c++", "cpp"],
     "C_SHARP": ["c#", "csharp"],
-    # frameworks y librerias
     "REACT": ["react", "react.js", "reactjs"],
     "ANGULAR": ["angular", "angular.js", "angularjs"],
     "VUE": ["vue", "vue.js", "vuejs"],
@@ -32,8 +31,7 @@ VARIANTS = {
     "SCIKIT_LEARN": ["scikit-learn", "scikit learn", "scikitlearn", "sklearn"],
     "TENSORFLOW": ["tensorflow", "tensor flow", "tensor-flow"],
     "PYTORCH": ["pytorch", "py torch", "py-torch"],
-    "SPARK": ["spark", "apache spark"],
-    "PYSPARK": ["pyspark", "py spark"],
+    "APACHE_SPARK": ["spark", "apache spark", "pyspark", "py spark"],
     "AIRFLOW": ["airflow", "apache airflow"],
     "KAFKA": ["kafka", "apache kafka"],
     "POSTGRESQL": ["postgres", "postgresql"],
@@ -54,21 +52,41 @@ VARIANTS = {
     "CI_CD": ["ci/cd", "ci cd", "ci-cd"],
     "AWS": ["aws", "amazon web services"],
     "AZURE": ["azure"],
+    "REST_APIS": ["rest api", "rest apis", "restful api", "restful apis"],
+    "ML_MODEL_DEVELOPMENT": [
+        "machine-learning model development",
+        "machine learning model development",
+        "machine-learning models",
+        "machine learning models",
+        "predictive models",
+        "developing predictive models",
+    ],
+    "ETL_PIPELINES": ["etl", "etl pipeline", "etl pipelines"],
+    "DATA_WAREHOUSING": ["data warehousing", "data warehouse"],
 }
 PROFILE_ORDER = {
-    "Full Stack Developer": ["JAVASCRIPT", "TYPESCRIPT", "REACT", "ANGULAR", "VUE", "NODE_JS", "EXPRESS",
-                             "DJANGO", "SPRING_BOOT", "SQL", "POSTGRESQL", "MYSQL", "MONGODB", "NOSQL",
-                             "GIT", "GITHUB"],
-    "Machine Learning Engineer": ["PYTHON", "PANDAS", "NUMPY", "SCIKIT_LEARN", "TENSORFLOW", "PYTORCH",
-                                  "SQL", "POSTGRESQL", "GIT"],
-    "Data Engineer": ["PYTHON", "SCALA", "SQL", "SPARK", "PYSPARK", "AIRFLOW", "KAFKA", "POSTGRESQL",
-                      "SNOWFLAKE", "BIGQUERY", "AWS", "DOCKER", "LINUX", "GIT"],
-    "DevOps Engineer": ["BASH", "PYTHON", "GO", "DOCKER", "KUBERNETES", "TERRAFORM", "ANSIBLE", "JENKINS",
-                        "CI_CD", "AWS", "AZURE", "LINUX", "NGINX", "GIT", "GITHUB"],
+    "Full Stack Developer": [
+        "JAVASCRIPT", "TYPESCRIPT", "REACT", "ANGULAR", "VUE", "NODE_JS", "EXPRESS",
+        "DJANGO", "SPRING_BOOT", "SQL", "POSTGRESQL", "MYSQL", "MONGODB", "NOSQL",
+        "REST_APIS", "GIT", "GITHUB",
+    ],
+    "Machine Learning Engineer": [
+        "PYTHON", "PANDAS", "NUMPY", "SCIKIT_LEARN", "TENSORFLOW", "PYTORCH",
+        "ML_MODEL_DEVELOPMENT", "SQL", "POSTGRESQL", "GIT",
+    ],
+    "Data Engineer": [
+        "PYTHON", "SCALA", "SQL", "APACHE_SPARK", "ETL_PIPELINES",
+        "DATA_WAREHOUSING", "AIRFLOW", "KAFKA", "POSTGRESQL", "SNOWFLAKE",
+        "BIGQUERY", "AWS", "DOCKER", "LINUX", "GIT",
+    ],
+    "DevOps Engineer": [
+        "BASH", "PYTHON", "GO", "DOCKER", "KUBERNETES", "TERRAFORM", "ANSIBLE",
+        "JENKINS", "CI_CD", "AWS", "AZURE", "LINUX", "NGINX", "GIT", "GITHUB",
+    ],
 }
 
 BUCKETS = ["programming_languages", "frameworks_and_libraries", "databases",
-           "tools_and_technologies", "cloud_and_containers"]
+           "tools_and_technologies", "cloud_and_containers", "profile_specific_skills"]
 
 def build_transducer():
     fst = FST()

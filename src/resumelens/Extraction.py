@@ -16,6 +16,8 @@ PATTERNS = {
     "contact_phones": re.compile(
         r"(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{4}"
     ),
+    
+    
     "contact_links": re.compile(
         r"\b(?:https?:\/\/)?(?:www\.)?(?:linkedin\.com\/(?:in|profile)\/[A-Za-z0-9_-]+|github\.com\/[A-Za-z0-9_-]+)\b",
         re.IGNORECASE  # Case-insensitive
@@ -24,7 +26,6 @@ PATTERNS = {
         r"(?i)(?:\b(?:python|javascript|typescript|js|ts|java|golang|rust|scala|ruby|php|kotlin|swift|r|sql|bash|shell|go)\b"
         r"|\bc\+\+(?=[^\w]|$)|(?:\bc#(?=[^\w]|$)))"
     ),
-
     
     "frameworks_and_libraries": re.compile(
         r"(?i)\b(?:react(?:\.js|js)?|angular|vue(?:\.js|js)?|node(?:\.js|js)?|django|spring(?:\s+boot)?"
@@ -38,6 +39,10 @@ PATTERNS = {
         r"|oracle(?:\s+database)?|sql[\s-]server|mssql|dynamodb|snowflake|bigquery|redshift|couchdb|neo4j|sql|nosql)\b"
     ),
 
+
+
+
+
     "academic_qualifications": re.compile(
         r"(?i)\b(?:bachelor(?:\'s)?(?:\s+degree)?|b\.?s(?:\.c?)?|undergraduate|pregrado|licenciatura|ingenier[ií]a|"
         r"master(?:\'s)?(?:\s+degree)?|m\.?s(?:\.c?)?|maestr[ií]a|ph\.?d\.?|doctorate|doctorado|diploma|certified|certification)\.?"
@@ -45,7 +50,6 @@ PATTERNS = {
         r"data\s+science|artificial\s+intelligence|information\s+technology|inform[aá]tica|sistemas|"
         r"ciencias\s+de\s+la\s+computaci[oó]n|inteligencia\s+artificial))?"
     ),
-
     "professional_experience": re.compile(
         r"(?i)(?:\b\d{1,2}\+?\s*(?:years?|yrs?)(?:\s+of)?(?:\s+experience)?"
         r"|\b(?:(?:19|20)\d{2}\s*[-–—]\s*(?:(?:19|20)\d{2}|present|actualidad|current))\b"
@@ -56,10 +60,17 @@ PATTERNS = {
         r"(?i)\b(?:git|github|gitlab|bitbucket|linux|unix|ubuntu|jira|confluence|trello"
         r"|postman|swagger|nginx|apache(?!\s+(?:spark|flink|kafka|airflow))|gradle|maven|npm|yarn|vite|webpack)\b"
     ),
+    
 
     "cloud_and_containers": re.compile(
         r"(?i)\b(?:docker|kubernetes|k8s|podman|helm|openshift|terraform|ansible|jenkins"
         r"|circleci|argo(?:\s*cd)?|aws|amazon\s+web\s+services|azure|gcp|google\s+cloud(?:\s+platform)?|ci[\s/-]?cd)\b"
+    ),
+
+    "profile_specific_skills": re.compile(
+        r"(?i)\b(?:rest(?:ful)?\s+apis?|etl(?:\s+pipelines?)?|data\s+warehousing"
+        r"|machine[\s-]+learning\s+model\s+development|machine[\s-]+learning\s+models?"
+        r"|predictive\s+models?|developing\s+predictive\s+models?)\b"
     ),
 }
 
@@ -92,6 +103,7 @@ def extract_resume_info(resume_text):
         "professional_experience": clean_and_deduplicate(PATTERNS["professional_experience"].findall(resume_text)),
         "tools_and_technologies": clean_and_deduplicate(PATTERNS["tools_and_technologies"].findall(resume_text)),
         "cloud_and_containers": clean_and_deduplicate(PATTERNS["cloud_and_containers"].findall(resume_text)),
+        "profile_specific_skills": clean_and_deduplicate(PATTERNS["profile_specific_skills"].findall(resume_text)),
     }
 
 
@@ -122,6 +134,7 @@ def save_to_text_file(candidates, filepath):
             f.write(f"6. Experience:    {', '.join(info['professional_experience'])}\n")
             f.write(f"7. Tools:         {', '.join(info['tools_and_technologies'])}\n")
             f.write(f"8. Cloud/DevOps:  {', '.join(info['cloud_and_containers'])}\n")
+            f.write(f"9. Profile skills: {', '.join(info['profile_specific_skills'])}\n")
             f.write("\n" + "=" * 50 + "\n\n")
 
     print(f"[OK] Saved TXT Summary: {filepath}")

@@ -1,156 +1,190 @@
-# ResumeLens — Stage 3: Profile Classification with Finite Automata
+# Stage 3: Qualification Pattern Recognition (Finite Automata)
 
 ## 1. Objective
 
-Stage 3 classifies a candidate's extracted CV skills against four professional profiles using one deterministic finite automaton (DFA) per profile:
+Stage 3 uses **Finite State Automata (FA)** to classify a candidate's qualifications against four professional profiles:
+1. **Full Stack Developer** (Predefined Reference Profile)
+2. **Machine Learning Engineer** (Predefined Reference Profile)
+3. **Data Engineer** (Team Profile — AI / Data area)
+4. **DevOps Engineer** (Team Profile — Software Engineering area)
 
-1. Full Stack Developer
-2. Machine Learning Engineer
-3. Data Engineer
-4. UI Developer
+The automata operate over the canonical skill symbols produced by Stage 2. To accommodate optional qualifications described in the project guidelines, **Full Stack Developer** and **Machine Learning Engineer** are modeled as **Nondeterministic Finite Automata with $\epsilon$-transitions ($\epsilon$-NFA)**, while **Data Engineer** and **DevOps Engineer** are modeled as **Deterministic Finite Automata (DFA)**.
 
-The automata receive normalized skill labels, not the raw CV text. Regex extraction belongs to Stage 1, and spelling/name normalization belongs to Stage 2.
+---
 
-## 2. Input and normalization
+## 2. Formal Automata Definitions (5-Tuple)
 
-`Extraction.py` returns categorized information such as programming languages, frameworks, databases, tools, and profile-specific skills. `normalize_skills()` collects those values and maps known variants to canonical symbols. Examples:
-
-| CV spelling | Canonical symbol |
-|---|---|
-| `JS`, `JavaScript` | `JAVASCRIPT` |
-| `TypeScript`, `TS` | `TYPESCRIPT` |
-| `React.js`, `React` | `REACT` |
-| `NodeJS`, `Node.js` | `NODE_JS` |
-| `Postgres`, `PostgreSQL`, `SQL` | `SQL` |
-| `Scikit-learn`, `sklearn` | `SCIKIT_LEARN` |
-| `TensorFlow` | `TENSORFLOW` |
-| `PyTorch` | `PYTORCH` |
-
-Normalization is essential: two spellings of the same qualification should not be treated as different automaton symbols.
-
-## 3. Canonical order
-
-A CV may list its skills in any order. Before testing a profile, `canonical_profile_sequence()` arranges the skills according to the profile's stage order. This implements the project's canonical-order requirement.
-
-For each stage, alternatives are different symbols that lead to the same next state. If a CV contains more than one alternative for the same stage, the implementation chooses the first available alternative in the order declared in `PROFILE_STAGES`. This ensures that, for example, a CV containing both Pandas and NumPy does not consume two transitions for one stage.
-
-## 4. Formal definition
-
-Each profile DFA is defined by the five-tuple
-
-\[
+Every profile automaton is formally defined by the standard 5-tuple:
+$
 M = (Q, \Sigma, \delta, q_0, F)
-\]
+$
 
-- \(Q\): states representing progress through the profile's skill stages.
-- \(\Sigma\): canonical skill symbols used by the profile.
-- \(\delta\): transition function. A skill from the current stage moves the automaton to the next state.
-- \(q_0\): initial state, before any required stage has been processed.
-- \(F\): the set containing the final state, reached after every required stage is matched.
+---
 
-The implementation uses `DeterministicFiniteAutomaton` from `pyformlang.finite_automaton`.
+### 2.1 Full Stack Developer ($\epsilon$-NFA)
 
-### Why DFA?
+- **Automaton Type:** $\epsilon$-NFA (justified by the optional `REST_APIS` stage, which can be bypassed via an $\epsilon$-transition).
+- **$Q$ (States):** $\{q_0, q_1, q_2, q_3, q_4, q_5, q_6\}$.
+- **$\Sigma$ (Alphabet):**
+  $\{\texttt{JAVASCRIPT}, \texttt{TYPESCRIPT}, \texttt{REACT}, \texttt{ANGULAR}, \texttt{VUE}, \texttt{NODE\_JS}, \texttt{DJANGO}, \texttt{SPRING\_BOOT}, \texttt{EXPRESS}, \texttt{SQL}, \texttt{POSTGRESQL}, \texttt{MYSQL}, \texttt{MONGODB}, \texttt{NOSQL}, \texttt{REST\_APIS}, \texttt{GIT}, \texttt{GITHUB}\}$.
+- **$q_0$:** Initial state $q_0$.
+- **$F$:** Accepting set $\{q_6\}$.
+- **Transition Relation ($\delta$):**
+  - $\delta(q_0, \texttt{JAVASCRIPT}) = \delta(q_0, \texttt{TYPESCRIPT}) = \{q_1\}$
+  - $\delta(q_1, \texttt{REACT}) = \delta(q_1, \texttt{ANGULAR}) = \delta(q_1, \texttt{VUE}) = \{q_2\}$
+  - $\delta(q_2, \texttt{NODE\_JS}) = \delta(q_2, \texttt{DJANGO}) = \delta(q_2, \texttt{SPRING\_BOOT}) = \delta(q_2, \texttt{EXPRESS}) = \{q_3\}$
+  - $\delta(q_3, \texttt{SQL}) = \delta(q_3, \texttt{POSTGRESQL}) = \delta(q_3, \texttt{MYSQL}) = \delta(q_3, \texttt{MONGODB}) = \delta(q_3, \texttt{NOSQL}) = \{q_4\}$
+  - $\delta(q_4, \texttt{REST\_APIS}) = \{q_5\}$ *(Mandatory transition when present)*
+  - $\delta(q_4, \epsilon) = \{q_5\}$ *(Optional transition skipping REST APIs)*
+  - $\delta(q_5, \texttt{GIT}) = \delta(q_5, \texttt{GITHUB}) = \{q_6\}$
 
-We choose DFAs because the input is normalized and arranged into a defined order. At each stage, each alternative skill has exactly one destination: the next state. Several different symbols may lead to that same destination; this does not make the automaton nondeterministic. An NFA would be needed if the same symbol from one state could lead to multiple destinations. An ε-NFA would add transitions that consume no input, which this design does not require.
+---
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> q0
+    q0 --> q1: JAVASCRIPT / TYPESCRIPT
+    q1 --> q2: REACT / ANGULAR / VUE
+    q2 --> q3: NODE_JS / DJANGO / SPRING_BOOT / EXPRESS
+    q3 --> q4: SQL / POSTGRESQL / MYSQL / MONGODB / NOSQL
+    q4 --> q5: REST_APIS
+    q4 --> q5: ε (optional)
+    q5 --> q6: GIT / GITHUB
+    q6 --> [*]
+```
 
-## 5. Profile stage definitions
+---
 
-A comma-separated list inside one stage means alternative labels for the same transition to the next state. The stages themselves must be processed in order.
+### 2.2 Machine Learning Engineer ($\epsilon$-NFA)
 
-### 5.1 Full Stack Developer
+- **Automaton Type:** $\epsilon$-NFA (justified by the optional `SCIKIT_LEARN` and `ML_MODEL_DEVELOPMENT` stages, allowing candidates with deep learning focus or varied skill combinations to be accepted).
+- **$Q$ (States):** $\{q_0, q_1, q_2, q_3, q_4, q_5, q_6, q_7\}$.
+- **$\Sigma$ (Alphabet):**
+  $\{\texttt{PYTHON}, \texttt{PANDAS}, \texttt{NUMPY}, \texttt{SCIKIT\_LEARN}, \texttt{TENSORFLOW}, \texttt{PYTORCH}, \texttt{ML\_MODEL\_DEVELOPMENT}, \texttt{SQL}, \texttt{POSTGRESQL}, \texttt{GIT}, \texttt{GITHUB}\}$.
+- **$q_0$:** Initial state $q_0$.
+- **$F$:** Accepting set $\{q_7\}$.
+- **Transition Relation ($\delta$):**
+  - $\delta(q_0, \texttt{PYTHON}) = \{q_1\}$
+  - $\delta(q_1, \texttt{PANDAS}) = \delta(q_1, \texttt{NUMPY}) = \{q_2\}$
+  - $\delta(q_2, \texttt{SCIKIT\_LEARN}) = \{q_3\}$, and $\delta(q_2, \epsilon) = \{q_3\}$
+  - $\delta(q_3, \texttt{TENSORFLOW}) = \delta(q_3, \texttt{PYTORCH}) = \{q_4\}$
+  - $\delta(q_4, \texttt{ML\_MODEL\_DEVELOPMENT}) = \{q_5\}$, and $\delta(q_4, \epsilon) = \{q_5\}$
+  - $\delta(q_5, \texttt{SQL}) = \delta(q_5, \texttt{POSTGRESQL}) = \{q_6\}$
+  - $\delta(q_6, \texttt{GIT}) = \delta(q_6, \texttt{GITHUB}) = \{q_7\}$
 
-1. `JAVASCRIPT` or `TYPESCRIPT`
-2. `REACT`, `ANGULAR`, or `VUE`
-3. `NODE_JS`, `DJANGO`, `SPRING_BOOT`, or `BACKEND_OTHER`
-4. `SQL` or `NOSQL`
-5. `REST_APIS`
-6. `GIT`
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> q0
+    q0 --> q1: PYTHON
+    q1 --> q2: PANDAS / NUMPY
+    q2 --> q3: SCIKIT_LEARN
+    q2 --> q3: ε (optional)
+    q3 --> q4: TENSORFLOW / PYTORCH
+    q4 --> q5: ML_MODEL_DEVELOPMENT
+    q4 --> q5: ε (optional)
+    q5 --> q6: SQL / POSTGRESQL
+    q6 --> q7: GIT / GITHUB
+    q7 --> [*]
+```
 
-### 5.2 Machine Learning Engineer
+---
 
-1. `PYTHON`
-2. `PANDAS` or `NUMPY`
-3. `SCIKIT_LEARN`
-4. `TENSORFLOW` or `PYTORCH`
-5. `ML_MODEL_DEVELOPMENT`
-6. `SQL`
-7. `GIT`
+### 2.3 Data Engineer (DFA)
 
-### 5.3 Data Engineer
+- **Automaton Type:** DFA (Deterministic Finite Automaton). All stages are strictly sequential and mandatory.
+- **$Q$ (States):** $\{q_0, q_1, q_2, q_3, q_4, q_5, q_6\}$.
+- **$\Sigma$ (Alphabet):**
+  $\{\texttt{PYTHON}, \texttt{SCALA}, \texttt{SQL}, \texttt{POSTGRESQL}, \texttt{APACHE\_SPARK}, \texttt{ETL\_PIPELINES}, \texttt{DATA\_WAREHOUSING}, \texttt{GIT}, \texttt{GITHUB}\}$.
+- **$q_0$:** Initial state $q_0$.
+- **$F$:** Accepting set $\{q_6\}$.
+- **Transition Function ($\delta$):**
+  - $\delta(q_0, \texttt{PYTHON}) = \delta(q_0, \texttt{SCALA}) = q_1$
+  - $\delta(q_1, \texttt{SQL}) = \delta(q_1, \texttt{POSTGRESQL}) = q_2$
+  - $\delta(q_2, \texttt{APACHE\_SPARK}) = q_3$
+  - $\delta(q_3, \texttt{ETL\_PIPELINES}) = q_4$
+  - $\delta(q_4, \texttt{DATA\_WAREHOUSING}) = q_5$
+  - $\delta(q_5, \texttt{GIT}) = \delta(q_5, \texttt{GITHUB}) = q_6$
 
-1. `PYTHON`
-2. `SQL`
-3. `APACHE_SPARK`
-4. `ETL_PIPELINES`
-5. `DATA_WAREHOUSING`
-6. `GIT`
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> q0
+    q0 --> q1: PYTHON / SCALA
+    q1 --> q2: SQL / POSTGRESQL
+    q2 --> q3: APACHE_SPARK
+    q3 --> q4: ETL_PIPELINES
+    q4 --> q5: DATA_WAREHOUSING
+    q5 --> q6: GIT / GITHUB
+    q6 --> [*]
+```
 
-### 5.4 UI Developer
+---
 
-1. `HTML`
-2. `CSS`
-3. `JAVASCRIPT`
-4. `REACT`
-5. `RESPONSIVE_WEB_DESIGN`
-6. `GIT`
+### 2.4 DevOps Engineer (DFA)
 
-These sequences reflect the skills defined for the project. A profile is accepted only when all its stages are represented in the canonical sequence.
+- **Automaton Type:** DFA. Models a comprehensive continuous integration and cloud deployment infrastructure pipeline.
+- **$Q$ (States):** $\{q_0, q_1, q_2, \dots, q_{13}\}$.
+- **$\Sigma$ (Alphabet):**
+  $\{\texttt{BASH}, \texttt{PYTHON}, \texttt{GO}, \texttt{DOCKER}, \texttt{KUBERNETES}, \texttt{TERRAFORM}, \texttt{ANSIBLE}, \texttt{JENKINS}, \texttt{CI\_CD}, \texttt{AWS}, \texttt{AZURE}, \texttt{LINUX}, \texttt{NGINX}, \texttt{GIT}, \texttt{GITHUB}\}$.
+- **$q_0$:** Initial state $q_0$.
+- **$F$:** Accepting set $\{q_{13}\}$.
+- **Transition Function ($\delta$):**
+  - $\delta(q_0, \texttt{BASH}) = q_1$
+  - $\delta(q_1, \texttt{PYTHON}) = q_2$
+  - $\delta(q_2, \texttt{GO}) = q_3$
+  - $\delta(q_3, \texttt{DOCKER}) = q_4$
+  - $\delta(q_4, \texttt{KUBERNETES}) = q_5$
+  - $\delta(q_5, \texttt{TERRAFORM}) = q_6$
+  - $\delta(q_6, \texttt{ANSIBLE}) = q_7$
+  - $\delta(q_7, \texttt{JENKINS}) = q_8$
+  - $\delta(q_8, \texttt{CI\_CD}) = q_9$
+  - $\delta(q_9, \texttt{AWS}) = \delta(q_9, \texttt{AZURE}) = q_{10}$
+  - $\delta(q_{10}, \texttt{LINUX}) = q_{11}$
+  - $\delta(q_{11}, \texttt{NGINX}) = q_{12}$
+  - $\delta(q_{12}, \texttt{GIT}) = \delta(q_{12}, \texttt{GITHUB}) = q_{13}$
 
-## 6. Transition diagrams
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> q0
+    q0 --> q1: BASH
+    q1 --> q2: PYTHON
+    q2 --> q3: GO
+    q3 --> q4: DOCKER
+    q4 --> q5: KUBERNETES
+    q5 --> q6: TERRAFORM
+    q6 --> q7: ANSIBLE
+    q7 --> q8: JENKINS
+    q8 --> q9: CI_CD
+    q9 --> q10: AWS / AZURE
+    q10 --> q11: LINUX
+    q11 --> q12: NGINX
+    q12 --> q13: GIT / GITHUB
+    q13 --> [*]
+```
 
-The code creates one state for the beginning of each stage plus a final state. For example, the Full Stack DFA has seven states: `q0` through `q6`. Each transition advances one stage. The final state is drawn with a double circle.
+---
 
-The diagrams are generated using the same approach shown in `Pyformlang.ipynb`:
+## 3. Implementation Details with pyformlang
 
-1. Build the DFA using `pyformlang`.
-2. Convert it to a NetworkX graph with `to_networkx()`.
-3. Create a left-to-right Graphviz diagram.
-4. Render the diagram to PNG and preserve the state/transition representation.
-
-To generate the four PNG diagrams from the project root:
+Automata are instantiated via `pyformlang.finite_automaton.DeterministicFiniteAutomaton` and `EpsilonNFA`.
 
 ```python
-from src.resumelens.ProfileClassification import draw_all_automata
+from pyformlang.finite_automaton import DeterministicFiniteAutomaton, EpsilonNFA, State, Symbol, Epsilon
 
-draw_all_automata(output_dir="docs/automata")
+automaton = EpsilonNFA() if optional_stages else DeterministicFiniteAutomaton()
 ```
 
-If the package layout uses `resumelens` directly rather than `src.resumelens`, use the import path that matches the project's existing Python configuration.
-
-Graphviz's Python package alone may not be sufficient: the Graphviz system executable must also be installed and available on PATH.
-
-## 7. Implementation overview
-
-`ProfileClassification.py` contains:
-
-- `PROFILE_STAGES`: the ordered stages and alternatives for each profile.
-- `normalize_skills()`: gathers extracted values and maps recognized variants to canonical symbols.
-- `create_profile_automaton()`: builds the DFA for one profile.
-- `canonical_profile_sequence()`: orders a candidate's known skills according to a profile's stages.
-- `classify_profile()`: tests the candidate against all four DFAs and returns the accepted profiles and diagnostic details.
-- `draw_automaton()`: creates a diagram for one profile.
-- `draw_all_automata()`: creates all four diagrams.
-
-The expected profile stored in a sample résumé is used only to check the test result. It is not used by the classifier to decide the profile.
-
-## 8. Running and testing
-
-Run the Stage 1 extraction first, then run `ProfileClassification.py` from the project root. The smoke test extracts each sample CV, classifies it, and reports whether the sample's expected profile was accepted.
-
-Install the Python dependencies if necessary:
-
-```bash
-pip install pyformlang networkx graphviz
+Each stage transition adds:
+```python
+automaton.add_transition(State(f"q{i}"), Symbol(skill), State(f"q{i+1}"))
+if is_optional:
+    automaton.add_transition(State(f"q{i}"), Epsilon(), State(f"q{i+1}"))
 ```
 
-Install the Graphviz application separately if diagram rendering is required. Diagram generation is optional for classification itself.
-
-## 9. Scope and limitations
-
-- The DFA evaluates the presence of the required profile stages in the project's canonical order; it does not assess skill proficiency or years of experience.
-- This is a strict sequence model. If a required stage is absent, a later skill cannot compensate for it.
-- A candidate can be accepted by more than one profile if their normalized skills satisfy more than one complete sequence.
-- Unknown skills are ignored by this Stage 3 implementation.
-- The alias map is a project-specific normalization layer. It should be kept consistent with Stage 2 rather than becoming a competing, separate normalization system.
-- `SQL` is treated as the canonical `SQL` symbol whether extraction placed it in programming languages or databases.
+### Verification Against Official Task Examples
+- **Full Stack Example:** `['JAVASCRIPT', 'REACT', 'NODE_JS', 'POSTGRESQL', 'GIT']`
+  $\implies$ Consumes transitions through $q_0 \dots q_4$, takes $\epsilon$-transition $q_4 \to q_5$, and consumes `GIT` to reach $q_6 \in F$. **ACCEPTED**.
+- **Machine Learning Example:** `['PYTHON', 'PANDAS', 'TENSORFLOW', 'POSTGRESQL', 'GIT']`
+  $\implies$ Skips Scikit-learn via $q_2 \xrightarrow{\epsilon} q_3$, consumes `TENSORFLOW` to $q_4$, skips model development via $q_4 \xrightarrow{\epsilon} q_5$, consumes `POSTGRESQL` to $q_6$, and consumes `GIT` to reach $q_7 \in F$. **ACCEPTED**.
