@@ -1,40 +1,39 @@
-"""
-ResumeLens - Stage 3: Profile classification with deterministic finite automata.
-
-Input: extracted skills (strings or the dictionary produced by Extraction.py).
-Each profile is represented as an ordered sequence of stages. Alternatives in
-one stage are different symbols leading to the same next state.
-
-The CV's skill order is not trusted: skills are normalized and arranged in
-the profile's canonical order before the DFA evaluates them.
-"""
-
-import re
 import os
+import re
 import sys
 from collections.abc import Mapping
+from pathlib import Path
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-SRC_DIR = os.path.join(BASE_DIR, "src")
-for directory in (BASE_DIR, SRC_DIR):
+BASE_DIR = Path(__file__).resolve().parents[2]
+SRC_DIR = BASE_DIR / "src"
+for directory in (str(BASE_DIR), str(SRC_DIR)):
     if directory not in sys.path:
         sys.path.insert(0, directory)
 
 from pyformlang.finite_automaton import (
     DeterministicFiniteAutomaton,
+    Epsilon,
+    EpsilonNFA,
     State,
     Symbol,
 )
+from resumelens.Normalization import normalize_term
 
-# Each tuple is one stage. Items inside a tuple are alternatives for that stage.
+
+def canonicalize_profile_name(profile_name):
+    if profile_name is None:
+        return None
+    return str(profile_name).strip()
+
+
 PROFILE_STAGES = {
     "Full Stack Developer": [
         ("JAVASCRIPT", "TYPESCRIPT"),
         ("REACT", "ANGULAR", "VUE"),
-        ("NODE_JS", "DJANGO", "SPRING_BOOT", "BACKEND_OTHER"),
-        ("SQL", "NOSQL"),
+        ("NODE_JS", "DJANGO", "SPRING_BOOT", "EXPRESS"),
+        ("SQL", "POSTGRESQL", "MYSQL", "MONGODB", "NOSQL"),
         ("REST_APIS",),
-        ("GIT",),
+        ("GIT", "GITHUB"),
     ],
     "Machine Learning Engineer": [
         ("PYTHON",),
@@ -42,92 +41,48 @@ PROFILE_STAGES = {
         ("SCIKIT_LEARN",),
         ("TENSORFLOW", "PYTORCH"),
         ("ML_MODEL_DEVELOPMENT",),
-        ("SQL",),
-        ("GIT",),
+        ("SQL", "POSTGRESQL"),
+        ("GIT", "GITHUB"),
     ],
     "Data Engineer": [
-        ("PYTHON",),
-        ("SQL",),
+        ("PYTHON", "SCALA"),
+        ("SQL", "POSTGRESQL"),
         ("APACHE_SPARK",),
         ("ETL_PIPELINES",),
         ("DATA_WAREHOUSING",),
-        ("GIT",),
+        ("GIT", "GITHUB"),
     ],
-    "UI Developer": [
-        ("HTML",),
-        ("CSS",),
-        ("JAVASCRIPT",),
-        ("REACT",),
-        ("RESPONSIVE_WEB_DESIGN",),
-        ("GIT",),
+    "DevOps Engineer": [
+        ("BASH",),
+        ("PYTHON",),
+        ("GO",),
+        ("DOCKER",),
+        ("KUBERNETES",),
+        ("TERRAFORM",),
+        ("ANSIBLE",),
+        ("JENKINS",),
+        ("CI_CD",),
+        ("AWS", "AZURE"),
+        ("LINUX",),
+        ("NGINX",),
+        ("GIT", "GITHUB"),
     ],
 }
 
-# Normalized labels and their common written variants.
-ALIASES = {
-    "JAVASCRIPT": {"javascript", "java script", "js"},
-    "TYPESCRIPT": {"typescript", "type script", "ts"},
-    "REACT": {"react", "react.js", "reactjs"},
-    "ANGULAR": {"angular", "angular.js", "angularjs"},
-    "VUE": {"vue", "vue.js", "vuejs"},
-    "NODE_JS": {"node.js", "nodejs", "node"},
-    "DJANGO": {"django"},
-    "SPRING_BOOT": {"spring boot", "springboot"},
-    "BACKEND_OTHER": {
-        "express", "express.js", "flask", "fastapi", "next.js",
-        "similar backend technology", "backend technology",
-    },
-    "SQL": {
-        "sql", "postgres", "postgresql", "mysql", "sqlite", "mariadb",
-        "oracle", "sql server", "mssql",
-    },
-    "NOSQL": {
-        "nosql", "mongodb", "mongo", "redis", "cassandra", "dynamodb",
-        "couchdb", "neo4j",
-    },
-    "REST_APIS": {"rest api", "rest apis", "restful api", "restful apis"},
-    "GIT": {"git"},
-    "PYTHON": {"python"},
-    "PANDAS": {"pandas"},
-    "NUMPY": {"numpy"},
-    "SCIKIT_LEARN": {"scikit-learn", "scikit learn", "sklearn"},
-    "TENSORFLOW": {"tensorflow", "tensor flow"},
-    "PYTORCH": {"pytorch", "py torch"},
-    "ML_MODEL_DEVELOPMENT": {
-        "machine-learning model development",
-        "machine learning model development",
-        "machine-learning models",
-        "machine learning models",
-        "predictive models",
-        "developing predictive models",
-    },
-    "APACHE_SPARK": {"apache spark", "spark", "pyspark"},
-    "ETL_PIPELINES": {"etl pipeline", "etl pipelines", "etl"},
-    "DATA_WAREHOUSING": {"data warehousing", "data warehouse"},
-    "HTML": {"html", "html5"},
-    "CSS": {"css", "css3"},
-    "RESPONSIVE_WEB_DESIGN": {
-        "responsive web design", "responsive design", "responsive layouts",
-    },
+OPTIONAL_PROFILE_STAGES = {
+    "Full Stack Developer": {4},
+    "Machine Learning Engineer": {2, 4},
 }
 
-# Compile aliases longest-first to avoid matching short variants inside longer ones.
-_ALIAS_LOOKUP = {}
-for canonical, variants in ALIASES.items():
-    for variant in variants:
-        _ALIAS_LOOKUP[variant] = canonical
-
-
-def _normalize_text(value):
-    """Normalize punctuation/spacing while preserving meaningful words."""
-    value = value.lower().strip()
-    value = value.replace("–", "-").replace("—", "-")
-    value = re.sub(r"\s+", " ", value)
-    return value.strip(" .,:;()[]{}")
+_PROFILE_SKILL_SYMBOLS = {
+    skill
+    for stages in PROFILE_STAGES.values()
+    for alternatives in stages
+    for skill in alternatives
+}
 
 
 def _collect_strings(value):
-    """Recursively collect strings from an Extraction.py result dictionary."""
     if isinstance(value, str):
         yield value
     elif isinstance(value, Mapping):
@@ -139,32 +94,24 @@ def _collect_strings(value):
 
 
 def normalize_skills(skills_or_extracted_info):
-    """
-    Return a set of canonical skill symbols.
 
-    Accepts a list/set of extracted strings or the full extracted_info mapping.
-    """
     found = set()
     for raw in _collect_strings(skills_or_extracted_info):
-        normalized = _normalize_text(raw)
-
-        # Exact aliases first.
-        if normalized in _ALIAS_LOOKUP:
-            found.add(_ALIAS_LOOKUP[normalized])
+        raw_upper = raw.strip().upper()
+        if raw_upper in _PROFILE_SKILL_SYMBOLS:
+            found.add(raw_upper)
             continue
 
-        # Extraction output may contain a longer sentence or a skill phrase.
-        # Match aliases on word-like boundaries, longest variants first.
-        for alias in sorted(_ALIAS_LOOKUP, key=len, reverse=True):
-            pattern = r"(?<!\w)" + re.escape(alias) + r"(?!\w)"
-            if re.search(pattern, normalized):
-                found.add(_ALIAS_LOOKUP[alias])
+        canon = normalize_term(raw)
+        if canon and canon in _PROFILE_SKILL_SYMBOLS:
+            found.add(canon)
 
     return found
 
 
 def create_profile_automaton(profile_name):
-    """Build a DFA for one profile using the profile's ordered stages."""
+    
+    profile_name = canonicalize_profile_name(profile_name)
     if profile_name not in PROFILE_STAGES:
         raise ValueError(
             f"Unknown profile: {profile_name}. "
@@ -172,31 +119,37 @@ def create_profile_automaton(profile_name):
         )
 
     stages = PROFILE_STAGES[profile_name]
-    dfa = DeterministicFiniteAutomaton()
+    optional_stages = OPTIONAL_PROFILE_STAGES.get(profile_name, set())
+    automaton = (
+        EpsilonNFA()
+        if optional_stages
+        else DeterministicFiniteAutomaton()
+    )
 
     states = [State(f"q{i}") for i in range(len(stages) + 1)]
-    dfa.add_start_state(states[0])
-    dfa.add_final_state(states[-1])
+    automaton.add_start_state(states[0])
+    automaton.add_final_state(states[-1])
 
     for index, alternatives in enumerate(stages):
         for skill in alternatives:
-            dfa.add_transition(
+            automaton.add_transition(
                 states[index],
                 Symbol(skill),
                 states[index + 1],
             )
+        if index in optional_stages:
+            automaton.add_transition(
+                states[index],
+                Epsilon(),
+                states[index + 1],
+            )
 
-    return dfa
+    return automaton
 
 
 def canonical_profile_sequence(profile_name, normalized_skills):
-    """
-    Order the CV skills according to the profile's canonical stages.
-
-    For a stage with alternatives, select one present alternative in the order
-    listed in PROFILE_STAGES. This prevents a CV listing both Pandas and NumPy
-    from consuming two transitions for the same stage.
-    """
+    
+    profile_name = canonicalize_profile_name(profile_name)
     if profile_name not in PROFILE_STAGES:
         raise ValueError(f"Unknown profile: {profile_name}")
 
@@ -213,30 +166,33 @@ def canonical_profile_sequence(profile_name, normalized_skills):
 
 
 def classify_profile(skills_or_extracted_info):
-    """
-    Return all profiles whose DFA accepts the candidate's available skills.
-
-    A profile is accepted only when every stage has a matching skill.
-    The result includes the normalized skills and per-profile test details.
-    """
+   
     normalized = normalize_skills(skills_or_extracted_info)
     accepted_profiles = []
     details = {}
 
     for profile_name in PROFILE_STAGES:
         sequence = canonical_profile_sequence(profile_name, normalized)
-        dfa = create_profile_automaton(profile_name)
-        accepted = dfa.accepts([Symbol(skill) for skill in sequence])
-
-        # The sequence must include one symbol per stage; this explicit check
-        # also makes the required-skill rule easy to understand.
-        accepted = accepted and len(sequence) == len(PROFILE_STAGES[profile_name])
+        automaton = create_profile_automaton(profile_name)
+        optional_stages = OPTIONAL_PROFILE_STAGES.get(profile_name, set())
+        required_stages = len(PROFILE_STAGES[profile_name]) - len(optional_stages)
+        matched_required_stages = sum(
+            any(skill in normalized for skill in alternatives)
+            for index, alternatives in enumerate(PROFILE_STAGES[profile_name])
+            if index not in optional_stages
+        )
+        accepted = (
+            automaton.accepts([Symbol(skill) for skill in sequence])
+            and matched_required_stages == required_stages
+        )
 
         details[profile_name] = {
             "accepted": accepted,
             "sequence": sequence,
             "expected_stages": len(PROFILE_STAGES[profile_name]),
             "matched_stages": len(sequence),
+            "required_stages": required_stages,
+            "matched_required_stages": matched_required_stages,
         }
         if accepted:
             accepted_profiles.append(profile_name)
@@ -248,65 +204,177 @@ def classify_profile(skills_or_extracted_info):
     }
 
 
-def draw_automaton(profile_name, output_dir=None, view=False):
-    """
-    Draw one DFA using Graphviz, in the same style as the Pyformlang notebook.
-    Saves PNG and DOT when output_dir is provided; returns the Digraph object.
-    """
-    import graphviz
+def classify_profile_by_name(skills_or_extracted_info, profile_name):
+    
+    profile_name = canonicalize_profile_name(profile_name)
+    if profile_name not in PROFILE_STAGES:
+        raise ValueError(
+            f"Unknown profile: {profile_name}. Expected one of: "
+            f"{', '.join(PROFILE_STAGES)}"
+        )
 
-    dfa = create_profile_automaton(profile_name)
-    graph = dfa.to_networkx()
-
-    dot = graphviz.Digraph(
-        name=profile_name.replace(" ", "_"),
-        engine="dot",
-        format="png",
+    normalized = normalize_skills(skills_or_extracted_info)
+    sequence = canonical_profile_sequence(profile_name, normalized)
+    automaton = create_profile_automaton(profile_name)
+    optional_stages = OPTIONAL_PROFILE_STAGES.get(profile_name, set())
+    required_stages = len(PROFILE_STAGES[profile_name]) - len(optional_stages)
+    matched_required_stages = sum(
+        any(skill in normalized for skill in alternatives)
+        for index, alternatives in enumerate(PROFILE_STAGES[profile_name])
+        if index not in optional_stages
     )
-    dot.attr(rankdir="LR", splines="true", nodesep="0.45", ranksep="0.65")
-    dot.attr("node", fontname="Helvetica", style="filled", fillcolor="#DCEAFE",
-             color="#4472C4", fontcolor="#17365D")
-    dot.attr("edge", fontname="Helvetica", fontsize="10")
+    accepted = (
+        automaton.accepts([Symbol(skill) for skill in sequence])
+        and matched_required_stages == required_stages
+    )
 
-    dot.node("__start__", label="", shape="none", width="0", height="0")
+    return {
+        "profile": profile_name,
+        "normalized_skills": sorted(normalized),
+        "sequence": sequence,
+        "accepted": accepted,
+        "required_stages": required_stages,
+        "matched_required_stages": matched_required_stages,
+    }
 
-    for node, data in graph.nodes(data=True):
-        node_id = str(node)
-        if node_id.startswith("starting_"):
+
+def _render_automaton_matplotlib(profile_name, output_png_path):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    automaton = create_profile_automaton(profile_name)
+    graph = automaton.to_networkx()
+
+    nodes = [n for n, d in graph.nodes(data=True) if not str(n).startswith("starting_")]
+    nodes.sort(key=lambda x: int(str(x)[1:]) if str(x)[1:].isdigit() else 999)
+
+    fig, ax = plt.subplots(figsize=(max(8, len(nodes) * 1.8), 3.2))
+    pos = {node: (i * 2.2, 0) for i, node in enumerate(nodes)}
+
+    edge_labels = {}
+    for u, v, data in graph.edges(data=True):
+        if str(u).startswith("starting_"):
             continue
+        label = data.get("label", "")
+        if (u, v) not in edge_labels:
+            edge_labels[(u, v)] = []
+        if label:
+            edge_labels[(u, v)].append(str(label))
 
-        is_final = data.get("is_final", False)
-        dot.node(
-            node_id,
-            label=node_id,
-            shape="doublecircle" if is_final else "circle",
+    for node in nodes:
+        is_final = graph.nodes[node].get("is_final", False)
+        x, y = pos[node]
+        circle = plt.Circle((x, y), 0.38, color="#DCEAFE", ec="#2563EB", lw=2, zorder=2)
+        ax.add_patch(circle)
+        if is_final:
+            inner = plt.Circle((x, y), 0.30, fill=False, ec="#2563EB", lw=1.5, zorder=3)
+            ax.add_patch(inner)
+        ax.text(x, y, str(node), ha="center", va="center", fontsize=11, fontweight="bold", color="#1E3A8A", zorder=4)
+
+
+
+    ax.annotate("", xy=(pos[nodes[0]][0] - 0.38, 0), xytext=(pos[nodes[0]][0] - 1.1, 0),
+                arrowprops=dict(arrowstyle="->", lw=2, color="#2563EB"))
+
+    for (u, v), labels in edge_labels.items():
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+        text_label = " / ".join(labels)
+        ax.annotate("", xy=(x2 - 0.38, y2), xytext=(x1 + 0.38, y1),
+                    arrowprops=dict(arrowstyle="->", lw=1.6, color="#475569"))
+        mid_x = (x1 + x2) / 2
+        ax.text(mid_x, y1 + 0.45, text_label, ha="center", va="bottom", fontsize=7.5,
+                color="#0F172A", bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="#CBD5E1", lw=0.8))
+
+    ax.set_xlim(-1.6, len(nodes) * 2.2)
+    ax.set_ylim(-1.0, 1.8)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_title(f"Automaton: {profile_name}", fontsize=13, fontweight="bold", pad=12)
+    plt.tight_layout()
+    plt.savefig(output_png_path, dpi=200, bbox_inches="tight")
+    plt.close()
+
+
+def draw_automaton(profile_name, output_dir=None, view=False):
+    safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", profile_name).lower()
+    rendered_png = False
+    try:
+        import graphviz
+        automaton = create_profile_automaton(profile_name)
+        graph = automaton.to_networkx()
+
+        dot = graphviz.Digraph(
+            name=profile_name.replace(" ", "_"),
+            engine="dot",
+            format="png",
         )
+        dot.attr(rankdir="LR", splines="true", nodesep="0.45", ranksep="0.65")
+        dot.attr("node", fontname="Helvetica", style="filled", fillcolor="#DCEAFE",
+                 color="#4472C4", fontcolor="#17365D")
+        dot.attr("edge", fontname="Helvetica", fontsize="10")
 
-    for source, target, data in graph.edges(data=True):
-        source_id = str(source)
-        target_id = str(target)
+        dot.node("__start__", label="", shape="none", width="0", height="0")
 
-        if source_id.startswith("starting_"):
-            dot.edge("__start__", target_id)
-        else:
-            label = str(data.get("label", ""))
-            dot.edge(source_id, target_id, label=label)
 
-    if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-        safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", profile_name).lower()
-        dot.render(
-            filename=safe_name,
-            directory=output_dir,
-            cleanup=True,
-            view=view,
-        )
 
-    return dot
+
+
+
+        for node, data in graph.nodes(data=True):
+            node_id = str(node)
+            if node_id.startswith("starting_"):
+                continue
+            is_final = data.get("is_final", False)
+            dot.node(
+                node_id,
+                label=node_id,
+                shape="doublecircle" if is_final else "circle",
+            )
+
+        for source, target, data in graph.edges(data=True):
+            source_id = str(source)
+            target_id = str(target)
+            if source_id.startswith("starting_"):
+                dot.edge("__start__", target_id)
+            else:
+                label = str(data.get("label", ""))
+                dot.edge(source_id, target_id, label=label)
+
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            dot.render(
+                filename=safe_name,
+                directory=output_dir,
+                cleanup=True,
+                view=view,
+            )
+            
+            
+            
+            
+            print(f"[OK] Diagram rendered via Graphviz: {output_dir}/{safe_name}.png")
+            rendered_png = True
+        return dot
+
+    except Exception:
+        if output_dir:
+            raw_dot = os.path.join(output_dir, safe_name)
+            if os.path.exists(raw_dot):
+                try:
+                    os.remove(raw_dot)
+                except OSError:
+                    pass
+            os.makedirs(output_dir, exist_ok=True)
+            out_png = os.path.join(output_dir, f"{safe_name}.png")
+            _render_automaton_matplotlib(profile_name, out_png)
+            print(f"[OK] Diagram rendered via Matplotlib: {out_png}")
+            return None
+        return None
 
 
 def draw_all_automata(output_dir="docs/automata", view=False):
-    """Generate a PNG diagram for each of the four profile DFAs."""
     return {
         profile_name: draw_automaton(
             profile_name,
@@ -318,11 +386,10 @@ def draw_all_automata(output_dir="docs/automata", view=False):
 
 
 if __name__ == "__main__":
-    # Smoke test using the sample CVs and the Stage 1 extractor.
     from data.sample_resumes import SAMPLE_RESUMES
     from resumelens.Extraction import extract_resume_info
 
-    print("RESUMELENS - STAGE 3: DFA PROFILE CLASSIFICATION")
+    print("RESUMELENS - STAGE 3: FINITE AUTOMATA PROFILE CLASSIFICATION")
     print("=" * 55)
 
     for resume in SAMPLE_RESUMES:
@@ -336,6 +403,3 @@ if __name__ == "__main__":
 
         expected_is_accepted = resume["target_profile"] in result["accepted_profiles"]
         print(f"Expected profile accepted: {expected_is_accepted}")
-
-    # Uncomment to export diagrams when Graphviz is installed:
-    # draw_all_automata(output_dir=os.path.join(BASE_DIR, "docs", "automata"))

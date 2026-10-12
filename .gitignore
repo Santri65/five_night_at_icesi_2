@@ -1,13 +1,68 @@
-# Python bytecode and cache
+# ==========================================
+# Bytecode y archivos temporales de Python
+# ==========================================
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
 
-# Runtime outputs (generated dynamically)
+# ==========================================
+# Entornos virtuales
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Salidas dinámicas de ejecución (Runtime)
+# ==========================================
 output/
 
-# IDE and Editor files
+# ==========================================
+# Configuraciones locales de IDEs y Editores
+# ==========================================
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# Pruebas, cobertura y análisis de tipos
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ==========================================
+# Archivos intermedios de Graphviz
+# (Solo conservar diagramas renderizados .png/.svg)
+# ==========================================
+docs/automata/*
+!docs/automata/*.png
+!docs/automata/*.svg
+!docs/automata/.gitkeep
+*.gv
+*.dot
+
+# ==========================================
+# Archivos del Sistema Operativo y Temporales
+# ==========================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+~$*.docx
+~$*.xlsx
+~$*.pptx
+*.tmp
+*.log

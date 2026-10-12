@@ -1,14 +1,3 @@
-"""
-Sample Resumes for the 4 Professional Profiles:
-1. Full Stack Developer (Wednesday Addams - Reference Profile)
-2. Machine Learning Engineer (Mary Jane Watson - Reference Profile)
-3. Data Engineer (Carlos Ruiz - Team Profile)
-4. UI Developer (Gwen Stacy - Team Profile)
-
-The resumes intentionally use different names and abbreviations
-for qualifications to test the normalization stage.
-"""
-
 SAMPLE_RESUMES = [
     {
         "candidate_name": "Wednesday Addams",
@@ -20,8 +9,8 @@ SAMPLE_RESUMES = [
         Education: Bachelor of Computer Science (2018 - 2022)
         3 years of experience developing web applications.
         Technical Skills:
-        JS, TypeScript, React.js, NodeJS, Postgres,
-        RESTful APIs, Git.
+        JavaScript, TypeScript, React.js, Node.js, PostgreSQL,
+        REST APIs, Git.
         """
     },
     {
@@ -32,11 +21,10 @@ SAMPLE_RESUMES = [
         Email: mj.watson@dailybugle.com | Phone: (123) 456-7890
         LinkedIn: linkedin.com/in/mary-jane-watson
         Education: M.S. in Artificial Intelligence
-        2 years of experience developing predictive models
-        and data-processing pipelines.
+        2 years of experience developing predictive models and data-processing pipelines.
         Technical Skills:
-        Python, pandas, sklearn, Tensor Flow,
-        Py Torch, ML model development, SQL, Git.
+        Python, Pandas, NumPy, Scikit-learn, TensorFlow,
+        PyTorch, Machine-learning model development, SQL, Git.
         """
     },
     {
@@ -49,20 +37,22 @@ SAMPLE_RESUMES = [
         Education: Ingenieria de Sistemas, Postgrado en Data Science
         4 years of experience building high-throughput ETL data pipelines.
         Technical Skills:
-        Python, SQL, Spark, ETL, Data Warehouse, Git.
+        Python, SQL, Apache Spark, ETL Pipelines,
+        Data Warehousing, Git.
         """
     },
     {
-        "candidate_name": "Gwen Stacy",
-        "target_profile": "UI Developer",
+        "candidate_name": "Alex Morgan",
+        "target_profile": "DevOps Engineer",
         "raw_text": """
-        Gwen Stacy
-        Email: gwen.stacy@example.com | Phone: +1 555-0123
-        GitHub: https://github.com/gwenstacy
-        Education: B.S. in Computer Science, Certified UI/UX Designer
-        5+ years of experience developing responsive web interfaces.
+        Alex Morgan
+        Email: alex.morgan@example.com | Phone: +1 555-0142
+        GitHub: https://github.com/alex-morgan
+        Education: B.S. in Computer Science
+        5 years of experience automating cloud infrastructure and CI/CD deployments.
         Technical Skills:
-        HTML5, CSS3, JS, React.js, RWD, Git.
+        Bash, Python, Go, Docker, Kubernetes, Terraform, Ansible,
+        Jenkins, CI/CD, AWS, Linux, Nginx, Git.
         """
     }
 ]

@@ -1,0 +1,57 @@
+CandidateProfile:
+    'candidate' name=STRING '{'
+        contact=ContactSection
+        experience=ExperienceSection
+        education=EducationSection
+        skills=SkillsSection
+        classification=ClassificationSection
+    '}'
+;
+
+ContactSection:
+    'contact' '{' entries*=ContactEntry '}'
+;
+
+ContactEntry:
+    EmailEntry | PhoneEntry | LinkEntry
+;
+
+EmailEntry:
+    'email' value=STRING ';'
+;
+
+PhoneEntry:
+    'phone' value=STRING ';'
+;
+
+LinkEntry:
+    'link' value=STRING ';'
+;
+
+ExperienceSection:
+    'experience' '{' entries*=TextEntry '}'
+;
+
+EducationSection:
+    'education' '{' entries*=TextEntry '}'
+;
+
+TextEntry:
+    'item' value=STRING ';'
+;
+
+SkillsSection:
+    'skills' '{' entries*=SkillEntry '}'
+;
+
+SkillEntry:
+    'skill' value=ID ';'
+;
+
+ClassificationSection:
+    'classification' '{' accepted_profiles*=AcceptedProfile '}'
+;
+
+AcceptedProfile:
+    'accepted' profile=STRING ';'
+;
