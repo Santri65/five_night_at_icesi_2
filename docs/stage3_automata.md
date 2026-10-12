@@ -26,7 +26,7 @@ $
 - **Automaton Type:** $\epsilon$-NFA (justified by the optional `REST_APIS` stage, which can be bypassed via an $\epsilon$-transition).
 - **$Q$ (States):** $\{q_0, q_1, q_2, q_3, q_4, q_5, q_6\}$.
 - **$\Sigma$ (Alphabet):**
-  $\{\texttt{JAVASCRIPT}, \texttt{TYPESCRIPT}, \texttt{REACT}, \texttt{ANGULAR}, \texttt{VUE}, \texttt{NODE\_JS}, \texttt{DJANGO}, \texttt{SPRING\_BOOT}, \texttt{EXPRESS}, \texttt{SQL}, \texttt{POSTGRESQL}, \texttt{MYSQL}, \texttt{MONGODB}, \texttt{NOSQL}, \texttt{REST\_APIS}, \texttt{GIT}, \texttt{GITHUB}\}$.
+  $\{\texttt{JAVASCRIPT}, \texttt{TYPESCRIPT}, \texttt{REACT}, \texttt{ANGULAR}, \texttt{VUE}, \texttt{NODE_JS}, \texttt{DJANGO}, \texttt{SPRING_BOOT}, \texttt{EXPRESS}, \texttt{SQL}, \texttt{POSTGRESQL}, \texttt{MYSQL}, \texttt{MONGODB}, \texttt{NOSQL}, \texttt{REST_APIS}, \texttt{GIT}, \texttt{GITHUB}\}$.
 - **$q_0$:** Initial state $q_0$.
 - **$F$:** Accepting set $\{q_6\}$.
 - **Transition Relation ($\delta$):**
